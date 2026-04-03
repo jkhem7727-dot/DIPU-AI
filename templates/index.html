@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dipu AI - Messenger Dashboard</title>
+    <style>
+        :root { --blue: #00f6ff; --purple: #9b5cff; --bg: #05010f; }
+        body { 
+            background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; 
+            margin: 0; height: 100vh; display: flex; justify-content: center; align-items: center;
+            overflow: hidden;
+        }
+        .container { 
+            display: grid; grid-template-columns: 250px 500px 250px; 
+            gap: 20px; padding: 20px; height: 85vh; 
+        }
+        .card { 
+            background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); 
+            border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); 
+            padding: 15px; display: flex; flex-direction: column;
+        }
+        .orb-box { align-items: center; justify-content: center; text-align: center; position: relative; }
+        .orb { 
+            width: 70px; height: 70px; border-radius: 50%; 
+            background: radial-gradient(circle, var(--blue), transparent 70%); 
+            box-shadow: 0 0 30px var(--blue); animation: pulse 2s infinite; margin-bottom: 5px;
+        }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); box-shadow: 0 0 50px var(--purple); } }
+        
+        /* History Section */
+        .history-list { flex-grow: 1; overflow-y: auto; margin-top: 10px; }
+        .history-item { 
+            padding: 10px; margin-bottom: 8px; background: rgba(255,255,255,0.03); 
+            border-radius: 10px; font-size: 12px; cursor: pointer; border: 1px solid transparent;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .history-item:hover { border-color: var(--blue); background: rgba(0,246,255,0.05); }
+
+        /* Chat Box */
+        #chat-box { 
+            flex-grow: 1; height: 320px; overflow-y: auto; 
+            margin: 15px 0; display: flex; flex-direction: column; gap: 10px; padding-right: 5px;
+        }
+        #chat-box::-webkit-scrollbar { width: 4px; }
+        #chat-box::-webkit-scrollbar-thumb { background: var(--blue); border-radius: 10px; }
+
+        .msg { padding: 10px; border-radius: 12px; max-width: 85%; font-size: 13px; word-wrap: break-word; }
+        .ai { background: rgba(0,246,255,0.1); align-self: flex-start; border-left: 3px solid var(--blue); }
+        .user { background: var(--blue); color: black; align-self: flex-end; font-weight: 500; }
+
+        #call-screen { display: none; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; }
+
+        .input-area { display: flex; gap: 5px; }
+        input { 
+            flex-grow: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--blue); 
+            background: rgba(0,0,0,0.5); color: white; outline: none;
+        }
+        .btn-new { background: var(--blue); color: black; font-weight: bold; margin-bottom: 15px; }
+        button { 
+            background: transparent; border: 1px solid var(--blue); color: white; 
+            padding: 8px; border-radius: 8px; cursor: pointer; transition: 0.3s; font-size: 13px;
+        }
+        button:hover { background: var(--blue); color: black; }
+        .call-btn { background: #25d366; border-color: #25d366; }
+        .end-btn { background: #ff3b30; border-color: #ff3b30; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <button class="btn-new" onclick="newChat()">+ New Chat</button>
+            <h4 style="color:var(--blue); margin: 5px 0;">Chat History</h4>
+            <div class="history-list" id="historyList">
+                </div>
+            <hr style="width:100%; opacity:0.1; margin: 15px 0;">
+            <h4 style="color:var(--blue); margin-bottom: 10px;">Shortcuts</h4>
+            <button style="margin-bottom:5px" onclick="sendCmd('open youtube')">YouTube</button>
+            <button onclick="sendCmd('take screenshot')">Screenshot</button>
+        </div>
+
+        <div class="card orb-box">
+            <div class="orb"></div>
+            <div id="status" style="font-size: 11px; color: var(--blue);">DIPU AI ONLINE</div>
+            
+            <div id="chat-mode" style="display: flex; flex-direction: column; width: 100%; flex-grow: 1;">
+                <div id="chat-box">
+                    <div class="msg ai">Hello baby Khem! How can I help you today?</div>
+                </div>
+                <div class="input-area">
+                    <input type="text" id="userInput" placeholder="Type here...">
+                    <button onclick="sendMessage()">Send</button>
+                    <button class="call-btn" onclick="startCall()">📞</button>
+                </div>
+            </div>
+
+            <div id="call-screen">
+                <h2 style="color:var(--blue);">Listening...</h2>
+                <p id="transcript" style="font-style: italic; opacity: 0.7; font-size: 14px;">"Waiting for voice..."</p>
+                <button class="end-btn" onclick="endCall()">End Call</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>System Info</h3>
+            <p style="font-size: 12px;">User: Khem Joshi</p>
+            <p style="font-size: 12px;">AI: Dipu (Hybrid)</p>
+            <hr style="width:100%; opacity:0.1;">
+            <p style="font-size: 11px; color: #aaa;">Status: Secure Connection</p>
+            <p style="font-size: 11px; color: #aaa; margin-top: 10px;">Memory: Active</p>
+        </div>
+    </div>
+
+    <script>
+        const chat = document.getElementById('chat-box');
+        const input = document.getElementById('userInput');
+        const historyList = document.getElementById('historyList');
+
+        // New Chat: Page Refresh garera clear garne
+        function newChat() {
+            if(confirm("Start a new chat? Current messages will be saved to history.")) {
+                location.reload();
+            }
+        }
+
+        async function sendMessage() {
+            const text = input.value;
+            if(!text) return;
+            
+            // Add to history list (UI side only)
+            if(chat.children.length === 1) { 
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                item.innerText = text;
+                historyList.prepend(item);
+            }
+
+            input.value = '';
+            addMsg('user', text);
+            
+            const res = await fetch('/chat', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({message: text}) 
+            });
+            const data = await res.json();
+            addMsg('ai', data.reply);
+        }
+
+        function startCall() {
+            document.getElementById('chat-mode').style.display = 'none';
+            document.getElementById('call-screen').style.display = 'flex';
+            fetch('/start_voice');
+        }
+
+        function endCall() {
+            document.getElementById('call-screen').style.display = 'none';
+            document.getElementById('chat-mode').style.display = 'flex';
+        }
+
+        function addMsg(role, text) {
+            const div = document.createElement('div');
+            div.className = 'msg ' + role;
+            div.innerText = text;
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function sendCmd(text) { input.value = text; sendMessage(); }
+        input.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
+    </script>
+</body>
+</html>
+"""
