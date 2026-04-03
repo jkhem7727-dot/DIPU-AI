@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dipu AI - Dashboard</title>
+    <style>
+        :root { --blue: #00f6ff; --bg: #05010f; }
+        body { background: var(--bg); color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 20px; border: 1px solid var(--blue); width: 400px; text-align: center; }
+        .orb { width: 80px; height: 80px; background: radial-gradient(circle, var(--blue), transparent); border-radius: 50%; margin: 0 auto 20px; box-shadow: 0 0 20px var(--blue); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        #chat-box { height: 200px; overflow-y: auto; text-align: left; font-size: 14px; margin-bottom: 10px; padding: 10px; background: rgba(0,0,0,0.3); }
+        input { width: 70%; padding: 8px; border-radius: 5px; border: 1px solid var(--blue); background: none; color: white; }
+        button { padding: 8px; background: var(--blue); border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="orb"></div>
+        <h3>DIPU AI ONLINE</h3>
+        <div id="chat-box"></div>
+        <input type="text" id="userInput" placeholder="Ask Dipu...">
+        <button onclick="send()">Send</button>
+    </div>
+    <script>
+        async function send() {
+            const input = document.getElementById('userInput');
+            const box = document.getElementById('chat-box');
+            if(!input.value) return;
+            box.innerHTML += `<div><b>You:</b> ${input.value}</div>`;
+            const res = await fetch('/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: input.value})
+            });
+            const data = await res.json();
+            box.innerHTML += `<div style="color:#00f6ff"><b>Dipu:</b> ${data.reply}</div>`;
+            box.scrollTop = box.scrollHeight;
+            input.value = '';
+        }
+    </script>
+</body>
+</html>
