@@ -1,0 +1,17 @@
+pygame
+pyttsx3
+SpeechRecognition
+plyer
+pyautogui
+sympy
+wikipedia
+pywhatkit
+mtranslate
+googlesearch-python
+pyjokes
+langchain-groq
+requests
+Pillow
+gTTS
+face-recognition
+opencv-python
